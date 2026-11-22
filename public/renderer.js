@@ -1402,12 +1402,7 @@ return;
 }
 
 var teams = room.teams || [];
-var sorted = teams.slice().sort(
-function (a, b) {
-return b.score - a.score;
-}
-);
-var cols = sorted.length > 2 ? 2 : 1;
+var cols = teams.length > 2 ? 2 : 1;
 var cellW =
 cols === 2 ? (boxW - 36) / 2 : boxW - 28;
 var rowH = 38;
@@ -1437,15 +1432,16 @@ ctx.textAlign = 'left';
 
 var activeId =
 room.round && room.round.activeTeamId;
-for (var i = 0; i < sorted.length; i++) {
-var tm = sorted[i];
+for (var i = 0; i < teams.length; i++) {
+var tm = teams[i];
+var isAct = tm.id === activeId;
 var colIdx = cols === 2 ? i % 2 : 0;
 var rowIdx =
 cols === 2 ? Math.floor(i / 2) : i;
 var cx = x + 14 + colIdx * (cellW + 8);
 var ry = y + headerH + rowIdx * rowH;
 
-if (tm.id === activeId) {
+if (isAct) {
 drawRoundRect(
 ctx,
 cx,
@@ -1456,20 +1452,44 @@ cellW,
 );
 ctx.fillStyle = pal.activeRowBg;
 ctx.fill();
+ctx.strokeStyle = tm.color;
+ctx.lineWidth = 2.5;
+ctx.stroke();
+}
+if (isAct) {
+ctx.fillStyle = tm.color;
+ctx.beginPath();
+ctx.moveTo(cx + 7, ry + 11);
+ctx.lineTo(cx + 15, ry + 17);
+ctx.lineTo(cx + 7, ry + 23);
+ctx.closePath();
+ctx.fill();
 }
 ctx.fillStyle = tm.color;
 ctx.beginPath();
-ctx.arc(cx + 16, ry + 17, 7.5, 0, Math.PI * 2);
+ctx.arc(
+cx + (isAct ? 24 : 16),
+ry + 17,
+7,
+0,
+Math.PI * 2
+);
 ctx.fill();
 
 ctx.fillStyle = pal.panelText;
-ctx.font = 'bold 18px sans-serif';
+ctx.font = isAct
+? 'bold 18px sans-serif'
+: 'bold 17px sans-serif';
 var nm = tm.name;
-var maxLen = cols === 2 ? 10 : 22;
+var maxLen = cols === 2 ? 9 : 20;
 if (nm.length > maxLen) {
 nm = nm.slice(0, maxLen - 1) + '…';
 }
-ctx.fillText(nm, cx + 30, ry + 23);
+ctx.fillText(
+nm,
+cx + (isAct ? 36 : 29),
+ry + 23
+);
 
 ctx.textAlign = 'right';
 ctx.fillStyle = pal.accent;

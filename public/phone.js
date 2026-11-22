@@ -406,6 +406,9 @@ $('btn-tv-q-on').textContent = t.tvShowQ;
 $('btn-tv-q-off').textContent = t.tvHideQ;
 $('btn-bonus-on').textContent = t.bonusOn;
 $('btn-bonus-off').textContent = t.bonusOff;
+$('btn-autoturn-on').textContent = t.autoTurnOn;
+$('btn-autoturn-off').textContent =
+t.autoTurnOff;
 $('lbl-set-teams').textContent =
 t.setTeamsTitle;
 $('lbl-set-room').textContent = t.setRoomTitle;
@@ -977,6 +980,13 @@ $('btn-bonus-off').className =
 !room.neighborBonus
 ? 'pill-btn selected'
 : 'pill-btn';
+var autoTurn = room.autoPassTurn !== false;
+$('btn-autoturn-on').className = autoTurn
+? 'pill-btn selected'
+: 'pill-btn';
+$('btn-autoturn-off').className = !autoTurn
+? 'pill-btn selected'
+: 'pill-btn';
 
 $('live-theme-rowan').className =
 room.theme === 'rowan'
@@ -1449,6 +1459,18 @@ neighborBonus: true
 $('btn-bonus-off').onclick = function () {
 apiPost('/api/settings', {
 neighborBonus: false
+});
+};
+
+$('btn-autoturn-on').onclick = function () {
+apiPost('/api/settings', {
+autoPassTurn: true
+});
+};
+
+$('btn-autoturn-off').onclick = function () {
+apiPost('/api/settings', {
+autoPassTurn: false
 });
 };
 

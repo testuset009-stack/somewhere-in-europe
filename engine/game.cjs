@@ -120,6 +120,7 @@ scoreboardPos: 'bottom',
 showQuestionOnTv: true,
 isRandomOrder: true,
 neighborBonus: true,
+autoPassTurn: true,
 tvSound: true,
 packFile: pack.fileName,
 askedNumbers: [],
@@ -224,6 +225,9 @@ r.round.queue = [];
 }
 if (typeof r.packFile !== 'string') {
 r.packFile = 'general_en.txt';
+}
+if (typeof r.autoPassTurn !== 'boolean') {
+r.autoPassTurn = true;
 }
 }
 if (!Array.isArray(parsed.events)) {
@@ -360,6 +364,30 @@ return room.teams[i];
 }
 }
 return null;
+}
+
+// move turn to next team in play order
+// wraps back to first team after last
+function advanceActiveTeam(room) {
+if (
+room.gameMode !== 'teams' ||
+room.teams.length < 2
+) {
+return;
+}
+var idx = 0;
+for (var i = 0; i < room.teams.length; i++) {
+if (
+room.teams[i].id ===
+room.round.activeTeamId
+) {
+idx = i;
+break;
+}
+}
+var nextIdx = (idx + 1) % room.teams.length;
+room.round.activeTeamId =
+room.teams[nextIdx].id;
 }
 
 // save undo snapshot before mutation
@@ -679,6 +707,9 @@ syncRoomQueue(room);
 if (typeof opts.neighborBonus === 'boolean') {
 room.neighborBonus = opts.neighborBonus;
 }
+if (typeof opts.autoPassTurn === 'boolean') {
+room.autoPassTurn = opts.autoPassTurn;
+}
 if (typeof opts.tvSound === 'boolean') {
 room.tvSound = opts.tvSound;
 }
@@ -958,24 +989,8 @@ saveUndo(room);
 cq.wrongCount += 1;
 cq.canShowHint = true;
 room.round.wrongTotal += 1;
-if (
-advanceTurn &&
-room.gameMode === 'teams' &&
-room.teams.length > 1
-) {
-var idx = 0;
-for (var i = 0; i < room.teams.length; i++) {
-if (
-room.teams[i].id ===
-room.round.activeTeamId
-) {
-idx = i;
-break;
-}
-}
-var nextIdx = (idx + 1) % room.teams.length;
-room.round.activeTeamId =
-room.teams[nextIdx].id;
+if (advanceTurn) {
+advanceActiveTeam(room);
 }
 pushEvent('wrong_answer', {
 wrongCount: cq.wrongCount
@@ -1202,6 +1217,9 @@ code: cq.country
 });
 } else {
 room.round.currentQuestion = null;
+if (room.autoPassTurn) {
+advanceActiveTeam(room);
+}
 room.round.phase =
 room.round.queue.length > 0
 ? 'ready'
@@ -1211,10 +1229,14 @@ saveDb();
 }
 
 // close revealed answer back to ready map
-// enters exhausted if no questions left
+// passes turn when autoPassTurn is on
 function nextReady() {
 var room = requireRoom();
+saveUndo(room);
 room.round.currentQuestion = null;
+if (room.autoPassTurn) {
+advanceActiveTeam(room);
+}
 syncRoomQueue(room);
 room.round.phase =
 room.round.queue.length > 0
