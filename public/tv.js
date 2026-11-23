@@ -75,6 +75,7 @@ if (
 document.visibilityState === 'visible'
 ) {
 keepAwake();
+kickRender();
 }
 }
 );
@@ -263,6 +264,9 @@ hostOpen = !hostOpen;
 hostFrame.style.display = hostOpen
 ? 'block'
 : 'none';
+if (!hostOpen) {
+kickRender();
+}
 }
 
 window.addEventListener(
@@ -277,6 +281,7 @@ hostOpen = false;
 if (hostFrame) {
 hostFrame.style.display = 'none';
 }
+kickRender();
 }
 }
 );
@@ -400,6 +405,8 @@ raf(drawStep);
 }
 }
 
+// draw one canvas frame and re-queue
+// checks anim after draw so fade clears
 function drawStep() {
 rafPending = false;
 if (
@@ -408,20 +415,26 @@ window.TV_RENDERER &&
 latestState &&
 latestState.room
 ) {
-var anim =
+var checkAnim =
 typeof window.TV_RENDERER.needsAnimation ===
-'function'
+'function';
+var animBefore = checkAnim
 ? window.TV_RENDERER.needsAnimation(
 latestState
 )
 : true;
-if (needsDraw || anim) {
+if (needsDraw || animBefore) {
 needsDraw = false;
 window.TV_RENDERER.render(
 ctx,
 latestState
 );
-if (anim) {
+var animAfter = checkAnim
+? window.TV_RENDERER.needsAnimation(
+latestState
+)
+: true;
+if (animAfter) {
 rafPending = true;
 raf(drawStep);
 }
@@ -477,8 +490,17 @@ playEventSound(evs[i].type, theme);
 }
 }
 }
+var animNow =
+window.TV_RENDERER &&
+typeof window.TV_RENDERER.needsAnimation ===
+'function' &&
+window.TV_RENDERER.needsAnimation(
+latestState
+);
 if (changed) {
 syncWaitingOverlay();
+kickRender();
+} else if (animNow) {
 kickRender();
 }
 } catch (e) {}

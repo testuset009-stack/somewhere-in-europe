@@ -1053,16 +1053,19 @@ if (!animState.revealCode) {
 return;
 }
 var elapsed = now - animState.revealStartMs;
-if (
-elapsed < animState.revealDuration ||
-elapsed >
+var totalMs =
 animState.revealDuration +
-animState.labelDuration
-) {
+animState.labelDuration;
+if (elapsed < animState.revealDuration) {
+return;
+}
+if (elapsed >= totalMs) {
+animState.revealCode = null;
 return;
 }
 var lc = findMapCountry(animState.revealCode);
 if (!lc) {
+animState.revealCode = null;
 return;
 }
 var lt =
@@ -1215,11 +1218,13 @@ ctx.restore();
 }
 }
 
+if (animState.hintCode) {
 if (
-animState.hintCode &&
-now - animState.hintStartMs <
+now - animState.hintStartMs >=
 animState.hintDuration
 ) {
+animState.hintCode = null;
+} else {
 var hc = findMapCountry(animState.hintCode);
 if (hc) {
 var hx = projX(hc.cx, mapBox);
@@ -1247,6 +1252,7 @@ Math.PI * 2
 );
 ctx.stroke();
 ctx.restore();
+}
 }
 }
 
@@ -1807,6 +1813,7 @@ p2y += 34;
 
 if (
 cq.lastHint &&
+animState.hintCode &&
 now - animState.hintStartMs <
 animState.hintDuration
 ) {
@@ -2013,7 +2020,7 @@ ctx.restore();
 }
 
 // check if tv canvas needs live frames
-// saves cpu on static themes when idle
+// stays true until clean frame clears
 function needsAnimation(state) {
 if (!state || !state.room) {
 return false;
@@ -2021,19 +2028,10 @@ return false;
 if (state.room.theme === 'christmas') {
 return true;
 }
-var now = Date.now();
-if (
-animState.revealCode &&
-now - animState.revealStartMs <
-animState.labelDuration + 120
-) {
+if (animState.revealCode) {
 return true;
 }
-if (
-animState.hintCode &&
-now - animState.hintStartMs <
-animState.hintDuration + 120
-) {
+if (animState.hintCode) {
 return true;
 }
 return false;

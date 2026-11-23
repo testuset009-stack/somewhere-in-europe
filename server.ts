@@ -54,9 +54,19 @@ path.join(__dirname, 'public', 'demo.html')
 );
 });
 
+// serve public assets with revalidation
+// keeps mobile browsers off stale js
 app.use(
 express.static(
-path.join(__dirname, 'public')
+path.join(__dirname, 'public'),
+{
+setHeaders: function (res) {
+res.setHeader(
+'Cache-Control',
+'no-cache'
+);
+}
+}
 )
 );
 app.use(api);

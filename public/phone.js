@@ -6,6 +6,8 @@ var countries = [];
 var packQuestions = [];
 var activeView = 'live';
 var pickerOpen = false;
+var geoHintOpen = false;
+var lastAskingNum = -1;
 var newRoomTheme = 'christmas';
 var uiLang = 'uk';
 var confirmTimers = {};
@@ -349,10 +351,10 @@ $('btn-hint-close').textContent =
 t.btnManualClose;
 $('btn-hint-far').textContent =
 t.btnManualFar;
+$('btn-toggle-geo-hint').textContent =
+t.btnGeoHint;
 $('btn-reveal-part2').textContent =
 t.btnRevealPart2;
-$('part2-locked-tip').textContent =
-t.part2LockedTip;
 $('btn-skip-reveal').textContent =
 t.btnSkipReveal;
 $('btn-skip-next').textContent =
@@ -867,11 +869,24 @@ $('btn-wrong-stay').textContent = isCoop
 ? t.btnWrongCoop
 : t.btnWrongStay;
 
-var allowHints = isCoop || cq.canShowHint;
-$('hint-controls-box').style.display = allowHints
-? 'block'
-: 'none';
-if (allowHints) {
+if (cq.number !== lastAskingNum) {
+lastAskingNum = cq.number;
+geoHintOpen = false;
+$('hint-country-search').value = '';
+}
+
+var geoBtn = $('btn-toggle-geo-hint');
+geoBtn.textContent =
+cq.hintCount > 0
+? t.btnGeoHint + ' ×' + cq.hintCount
+: t.btnGeoHint;
+geoBtn.className = geoHintOpen
+? 'pill-btn selected'
+: 'pill-btn';
+
+$('hint-controls-box').style.display =
+geoHintOpen ? 'block' : 'none';
+if (geoHintOpen) {
 renderCountryChips();
 }
 
@@ -892,16 +907,18 @@ lhp.textContent =
 lhp.style.display = 'none';
 }
 
-var p2Unlock = $('part2-unlock-box');
-if (cq.hasPart2 && !cq.part2Revealed) {
-p2Unlock.style.display = 'block';
-var canP2 = isCoop || cq.hintCount >= 1;
-$('btn-reveal-part2').disabled = !canP2;
-$('part2-locked-tip').style.display = canP2
-? 'none'
-: 'block';
+var p2Btn = $('btn-reveal-part2');
+if (cq.hasPart2) {
+p2Btn.style.display = '';
+p2Btn.disabled = Boolean(cq.part2Revealed);
+p2Btn.textContent = cq.part2Revealed
+? t.btnPart2Opened
+: t.btnRevealPart2;
+p2Btn.className = cq.part2Revealed
+? 'pill-btn selected'
+: 'pill-btn';
 } else {
-p2Unlock.style.display = 'none';
+p2Btn.style.display = 'none';
 }
 }
 
@@ -1373,6 +1390,11 @@ $('btn-hint-far').onclick = function () {
 apiPost('/api/distance-hint', {
 manualTier: 'far'
 });
+};
+
+$('btn-toggle-geo-hint').onclick = function () {
+geoHintOpen = !geoHintOpen;
+render();
 };
 
 $('btn-reveal-part2').onclick = function () {
